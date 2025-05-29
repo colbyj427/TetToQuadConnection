@@ -1,7 +1,7 @@
 from ConnectQuadToTet import save_to_obj
 import sys
 
-def vtkToObj(vtkMesh, filename):
+def vtkToObj(vtkMesh, filename = "../input/convertedVTK.obj"):
     # get the vertices and faces from the vtk mesh.
     # obj is 1 indexed. vtk is 0 indexed.
     with open(vtkMesh, "r") as quadFile: 
@@ -27,15 +27,21 @@ def vtkToObj(vtkMesh, filename):
             if line.startswith("CELLS"):
                 numCells = int(line.split()[1])
 
-    #write them to the obj, there is a function in SurfaceMesh.py or ConnectQuadToTet.py that does this.
-    save_to_obj(filename, vertices, faces)
+    #write them to the obj
+    save_to_obj(f"{filename}", vertices, faces)
     return None
 
-if "name" == "main":
-    vtkMesh = sys.argv[1]
-    outFile = sys.argv[2]
-    vtkToObj(vtkMesh,outFile)
-vtkToObj("quad.vtk", "convertedVTK.obj")
+# if "name" == "main":
+#     print("Starting main.py...")
+
+#     vtkMesh = sys.argv[1]
+#     outFile = sys.argv[2]
+#     vtkToObj(vtkMesh,outFile)
+# vtkToObj("quad.vtk", "convertedVTK.obj")
+
+
+
+
 
 # Somehow calculate a boundary with which I can compare a point to in 
 # order to determine if it is within the surface or not.
