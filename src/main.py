@@ -25,6 +25,7 @@ if __name__ == "__main__":
 
     tetMesh = args.tetMesh
     quadMesh = args.quadMesh
+    
 
     # add verification
     if tetMesh == None:

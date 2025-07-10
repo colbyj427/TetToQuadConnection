@@ -1,5 +1,7 @@
 #!/bin/zsh
 #Run this file from the directory where it is located, the parent directory.
+#The input tet mesh must be named: “inputTetMesh.obj” and placed in the “input” directory 
+#   which resides in the TetToQuadConnection directory.
 set -e
 echo "Starting script"
 echo "Creating quadrilateral mesh..."
