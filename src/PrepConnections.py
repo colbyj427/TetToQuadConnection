@@ -1,7 +1,10 @@
-from src.ConnectQuadToTet import save_to_obj
 import sys
-from src.surfacemesh import SurfaceMesh
-
+from pathlib import Path
+THIS_DIR = Path(__file__).resolve().parent
+if str(THIS_DIR) not in sys.path:
+    sys.path.insert(0, str(THIS_DIR))
+from ConnectQuadToTet import save_to_obj
+from surfacemesh import SurfaceMesh
 
 def vtkToObj(vtkMesh, filename = "../input/convertedVTK.obj"):
     # get the vertices and faces from the vtk mesh.

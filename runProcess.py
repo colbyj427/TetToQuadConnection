@@ -4,6 +4,9 @@ import sys
 import subprocess
 from pathlib import Path
 import os
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
 from src.ConnectQuadToTet import *
 from src.PrepConnections import *
 
@@ -76,5 +79,3 @@ def runProcess(tetMesh: str, quadMesh: str = None):
         # print results
         print("Quad Mesh of the boundary file is stored at: input/quadMeshBoundary.obj")
         print("Barycentric information is stored in: output/quadVertices.txt")
-
-run_quadriflow_program("input")

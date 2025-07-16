@@ -1,7 +1,12 @@
 import math
 from numpy import *
 import builtins  # For explicit use of Python's built-in min and max
-from src.surfacemesh import SurfaceMesh
+from pathlib import Path
+import sys
+THIS_DIR = Path(__file__).resolve().parent
+if str(THIS_DIR) not in sys.path:
+    sys.path.insert(0, str(THIS_DIR))
+from surfacemesh import SurfaceMesh
 
 def project_point_onto_triangle_plane(point, v0, v1, v2):
     """
