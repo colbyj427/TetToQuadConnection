@@ -1,3 +1,9 @@
+"""
+This script is designed to successfully download and build the 
+ScaleUntrim library, which can be found at this link:
+https://github.com/colbyj427/edited-scale-untrim.git
+"""
+
 import platform
 import shutil
 import subprocess
