@@ -18,7 +18,7 @@ def run_quadriflow_program(inputFile: str):
     inputFile: str - Path to the tet mesh file.
     """
     quadriflowExecutable = SCRIPT_DIR / "ScaleUntrim" / "build" / "quadriflow"
-    configPath = SCRIPT_DIR / "TetToQuadConnection" / "ScaleUntrim" / "setting.config"
+    configPath = SCRIPT_DIR / "ScaleUntrim" / "setting.config"
     
     if not quadriflowExecutable.exists():
         raise FileNotFoundError(f"C++ executable not found at {quadriflowExecutable}")
