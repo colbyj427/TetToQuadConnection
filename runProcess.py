@@ -3,9 +3,9 @@
 import sys
 import subprocess
 from pathlib import Path
-import argparse
-from TetToQuadConnection.src.ConnectQuadToTet import *
-from TetToQuadConnection.src.PrepConnections import *
+import os
+from src.ConnectQuadToTet import *
+from src.PrepConnections import *
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 
@@ -14,14 +14,14 @@ def run_quadriflow_program(inputFile: str):
     Runs the quadriflow program to create a quad mesh from a tet mesh input file.
     inputFile: str - Path to the tet mesh file.
     """
-    projectRoot = Path(__file__).resolve().parent
-    quadriflowExecutable = projectRoot / "build" / "quadriflow"
-
+    quadriflowExecutable = SCRIPT_DIR / "build" / "quadriflow"
+    configPath = SCRIPT_DIR / "TetToQuadConnection" / "build" / "setting.config"
+    
     if not quadriflowExecutable.exists():
         raise FileNotFoundError(f"C++ executable not found at {quadriflowExecutable}")
     
     
-    command = [str(quadriflowExecutable), inputFile, "./output/quad.vtk", "TetToQuadConnection/build/setting.config"]
+    command = [str(quadriflowExecutable), inputFile, configPath]
 
     try:
         result = subprocess.run(command, check=True, capture_output=True, text=True)
@@ -59,20 +59,22 @@ def runProcess(tetMesh: str, quadMesh: str = None):
         # this uses scale untrim / quadriflow
         run_quadriflow_program(tetMesh)
         # run_quadriflow_program(boundaryFilePath)
-        vtkPath = Path("TetToQuadConnection/build/tempdir/quad.vtk")
+        vtkPath = SCRIPT_DIR / "build" / "tempdir" / "quad.vtk"
         if not vtkPath.exists():
             raise FileNotFoundError("The generated quadrilateral vtk file does not exist.")
 
         # 4. Convert the vtk file to an obj file.
-        quadMeshObjPath = Path("TetToQuadConnection/output/quadMeshBoundary.obj")
+        quadMeshObjPath = SCRIPT_DIR / "output" / "quadMeshBoundary.obj"
         vtkToObj(vtkPath, quadMeshObjPath)
         if not quadMeshObjPath.exists():
             raise FileNotFoundError("The converted quadrilateral obj file does not exist.")
 
         # 5. Run code to get the barycentric coordinates of quad vertices.
-        connectQuadVertexOntoTriangle(tetMesh, str(quadMeshObjPath), "TetToQuadConnection/output/quadVertices.txt")
-        # connectQuadVertexOntoTriangle(tetMesh, "./input/quadMeshBoundary.obj", "./output/quadVertices.txt")
+        outputPath = SCRIPT_DIR / "output" / "quadVertices.txt"
+        connectQuadVertexOntoTriangle(tetMesh, str(quadMeshObjPath), str(outputPath))
 
         # print results
         print("Quad Mesh of the boundary file is stored at: input/quadMeshBoundary.obj")
         print("Barycentric information is stored in: output/quadVertices.txt")
+
+run_quadriflow_program("input")
