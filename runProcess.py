@@ -6,8 +6,6 @@ from pathlib import Path
 import argparse
 from src.ConnectQuadToTet import *
 from src.PrepConnections import *
-# TODO : Move the file into the directory so I can import test_sweep_param directly.
-# from test_sweep_param import meshHook
 
 def run_quadriflow_program(inputFile: str):
     projectRoot = Path(__file__).resolve().parent
