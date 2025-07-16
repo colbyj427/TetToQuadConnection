@@ -112,11 +112,17 @@ def save_to_obj(file_path, vertices, faces):
 
 
 def connectQuadVertexOntoTriangle(triMeshFile, quadMeshFile, outputPath):
+def connectQuadVertexOntoTriangle(triMeshFile, quadMeshFile, outputPath):
     # create a mesh of both files.
     triMesh = SurfaceMesh.FromOBJ_FileName(triMeshFile)
     quadMesh = SurfaceMesh.FromOBJ_FileName(quadMeshFile)
 
 
+    quadFile = open(outputPath, "w")
+    # first format
+    # quadFile.write("Quadrilateral Vertex: [ x y z ] , Closest Triangle Face Vertices: [ x y z ]\n")
+    # second format
+    quadFile.write("Quadrilateral Vertex Index, Triangle Face Index, Barycentric Coordinates (u v w)\n")
     quadFile = open(outputPath, "w")
     # first format
     # quadFile.write("Quadrilateral Vertex: [ x y z ] , Closest Triangle Face Vertices: [ x y z ]\n")
@@ -181,8 +187,10 @@ def connectQuadVertexOntoTriangle(triMeshFile, quadMeshFile, outputPath):
         closestProjectedPointOnEdge = "unassigned"
         if badCoord:
             # print("No face with barycentric coordinates all between 0 and 1")
+            # print("No face with barycentric coordinates all between 0 and 1")
             # Unless there is a way to determine which edges are on the outside, closest to our point, then
             # we need to check all the edges on each adjacent face and use the one with the smallest distance.
+            # print(f"Faces adjacent to vertex: {facesAdjacentToVertex}")
             # print(f"Faces adjacent to vertex: {facesAdjacentToVertex}")
             faceIndex = 0
             minDistance = math.inf
@@ -260,6 +268,9 @@ def connectQuadVertexOntoTriangle(triMeshFile, quadMeshFile, outputPath):
 
         #write the vertice each iteration of the for loop.
         # Format: "the current vertex from the quadrialteral mesh, the vertices of the closest face on the triangle mesh."
+        # quadFile.write(f"{chosenVertex} , [ {triMesh.vs[triMesh.faces[closestFaceMeshIndex][0]][0]} {triMesh.vs[triMesh.faces[closestFaceMeshIndex][0]][1]} {triMesh.vs[triMesh.faces[closestFaceMeshIndex][0]][2]} ] [ {triMesh.vs[triMesh.faces[closestFaceMeshIndex][1]][0]} {triMesh.vs[triMesh.faces[closestFaceMeshIndex][1]][1]} {triMesh.vs[triMesh.faces[closestFaceMeshIndex][1]][2]} ] [ {triMesh.vs[triMesh.faces[closestFaceMeshIndex][2]][0]} {triMesh.vs[triMesh.faces[closestFaceMeshIndex][2]][1]} {triMesh.vs[triMesh.faces[closestFaceMeshIndex][2]][2]} ]\n")
+        # Format: "the current vertex indice from the quadrilateral mesh, the face indice it resides in or is closest to, the barycentric coordinates of the vertice in that face."
+        quadFile.write(f"{i}, {closestFaceMeshIndex}, {barycentric[0]} {barycentric[1]} {barycentric[2]}\n")
         # quadFile.write(f"{chosenVertex} , [ {triMesh.vs[triMesh.faces[closestFaceMeshIndex][0]][0]} {triMesh.vs[triMesh.faces[closestFaceMeshIndex][0]][1]} {triMesh.vs[triMesh.faces[closestFaceMeshIndex][0]][2]} ] [ {triMesh.vs[triMesh.faces[closestFaceMeshIndex][1]][0]} {triMesh.vs[triMesh.faces[closestFaceMeshIndex][1]][1]} {triMesh.vs[triMesh.faces[closestFaceMeshIndex][1]][2]} ] [ {triMesh.vs[triMesh.faces[closestFaceMeshIndex][2]][0]} {triMesh.vs[triMesh.faces[closestFaceMeshIndex][2]][1]} {triMesh.vs[triMesh.faces[closestFaceMeshIndex][2]][2]} ]\n")
         # Format: "the current vertex indice from the quadrilateral mesh, the face indice it resides in or is closest to, the barycentric coordinates of the vertice in that face."
         quadFile.write(f"{i}, {closestFaceMeshIndex}, {barycentric[0]} {barycentric[1]} {barycentric[2]}\n")
