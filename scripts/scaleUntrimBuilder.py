@@ -12,33 +12,33 @@ def findOS():
         print("Error finding OS.")
         sys.exit(-1)
 
-def findManager(os):
+def findPackageManager(os):
     os = os.lower()
     if os == "darwin" or os == "linux":
-        if checkDependencyIsInstalled("brew"):
+        if checkSystemToolIsInstalled("brew"):
             return "brew"
     elif os == "windows":
-        if checkDependencyIsInstalled("choco"):
+        if checkSystemToolIsInstalled("choco"):
             return "choco"
     return None
 
-def checkDependencyIsInstalled(dep):
+def checkSystemToolIsInstalled(dep):
     """
     This works for a program that creates output
     when called on terminal, such as git, cmake, or homebrew.
-    dep: str - the name of the dependency to check.
+    dep: str - the name of the tool to check.
     """
     if shutil.which(dep):
         return True
     return False
 
-def checkPackageIsInstalled(manager, package):
+def checkLibraryIsInstalled(manager, library):
     """
-    Check if a package is installed.
-    package: str - the name of the package to check.
+    Check if a library is installed.
+    library: str - the name of the library to check.
     """
     if shutil.which(manager):
-        command = [manager, "list", package]
+        command = [manager, "list", library]
         try:
             result = subprocess.run(command, check=True, capture_output=True, text=True)
             if result.returncode == 0:
@@ -86,21 +86,17 @@ def cloneRepository(repoUrl, targetDirectory=None):
     if targetDirectory:
         command.append(targetDirectory)
     try:
-        subprocess.run(command, check=True, capture_output=True, text=True)
-    except subprocess.CalledProcessError as e:
-        print(f"Error running command: {e.cmd}")
-        print(f"Return code: {e.returncode}")
-        print(f"OUTPUT: {e.output}")
-        print(f"ERROR OUTPUT: {e.stderr}\n")
+        runCommand(command)
     except:
         print(f"Error running command: {command}")
+        sys.exit(-1)
 
-def installPackage(manager, package):
+def installLibrary(manager, package):
     """
-    Install a package using homebrew or another package manager. Error catching is implemented in the runCommand function.
-    package: str - the name of the package that the package manager will recognize.
+    Install a library using homebrew or another package manager. Error catching is implemented in the runCommand function.
+    package: str - the name of the library that the package manager will recognize.
     """
-    if checkDependencyIsInstalled(manager):
+    if checkSystemToolIsInstalled(manager):
         
         command = [manager, "install", package]
         try:
@@ -109,42 +105,42 @@ def installPackage(manager, package):
             print(f"Error installing package {package} with {manager}.")
             sys.exit(-1)
 
-def installDependencies(manager, dependencies):
+def installLibraries(manager, libraries):
     """
-    Check the list of dependencies input using the checkDependencyIsInstalled function.
-    Then install the dependency if the user says yes.
-    dependencies: List[str] - a list of dependencies to check
+    Install a list of packages using the given package manager.
+    libraries: List[str] - a list of libraries to install.
     """
-    for dep in dependencies:
-        if not checkDependencyIsInstalled(dep):
-            print(f"{dep} is not installed. It will be installed now.")
+    for library in libraries:
+        if not checkLibraryIsInstalled(manager, library):
+            installLibrary(manager, library)
+            print(f"{library} has been installed.")
+
+def installSystemTools(manager, tools):
+    """
+    Check the list of tools input using the checkSystemToolIsInstalled function.
+    Then install the tool if the user says yes.
+    tools: List[str] - a list of dependencies to check
+    """
+    for tool in tools:
+        if not checkSystemToolIsInstalled(tool):
+            print(f"{tool} is not installed. It will be installed now.")
             usrIn = input("Enter y to continue or n to cancel program: ")
             if usrIn == "n":
                 print("Exiting...")
                 sys.exit(0)
-            installPackage(manager, dep)
-            print(f"{dep} has been installed.")
-
-def installPackages(manager, packages):
-    """
-    Install a list of packages using the given package manager.
-    packages: List[str] - a list of packages to install.
-    """
-    for package in packages:
-        if not checkPackageIsInstalled(manager, package):
-            installPackage(manager, package)
-            print(f"{package} has been installed.")
+            installLibrary(manager, tool)
+            print(f"{tool} has been installed.")
 
 def buildScaleUntrim():
     os = findOS()
-    manager = findManager(os)
+    manager = findPackageManager(os)
     if not manager:
         print("No package manager found, please install homebrew or chocolatey to use this script.")
         return 
     # print("DEBUG: CHECKING DEPENDENCIES")
-    installDependencies(manager, ["cmake", "git", "make"])
+    installSystemTools(manager, ["cmake", "git", "make"])
     # print("DEBUG: FINISHED CHECKING DEPENDENCIES")
-    installPackages(manager, ["eigen", "boost", "OpenCascade"])
+    installLibraries(manager, ["eigen", "boost", "OpenCascade"])
     # print("DEBUG: ABOUT TO BUILD")
     cloneRepository("https://github.com/colbyj427/edited-scale-untrim.git", "ScaleUntrim")
     makeDirectory("ScaleUntrim/build")
@@ -162,9 +158,8 @@ def runExample():
     Run an example of the ScaleUntrim program.
     """
     print("Running example...")
-    runCommand(["./ScaleUntrim/build/quadriflow", "./ScaleUntrim/hookBase.obj", "outputQuadMesh.obj", "./ScaleUntrim/setting.config"])
+    runCommand(["./ScaleUntrim/build/quadriflow", "./ScaleUntrim/hookBase.obj", "./ScaleUntrim/setting.config"])
     print("Example finished.")
     print("The resulting quadrilateral mesh is stored in ScaleUntrim/build/tempDir/quad.vtk")
 
-# buildScaleUntrim()
-# runExample()
+runExample()
