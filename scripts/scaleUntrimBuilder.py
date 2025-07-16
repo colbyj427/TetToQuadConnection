@@ -168,4 +168,4 @@ def runExample():
     print("Example finished.")
     print("The resulting quadrilateral mesh is stored in ScaleUntrim/build/tempDir/quad.vtk")
 
-runExample()
+buildScaleUntrim()
