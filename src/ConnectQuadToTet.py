@@ -115,6 +115,14 @@ def save_to_obj(file_path, vertices, faces):
 
 
 def connectQuadVertexOntoTriangle(triMeshFile, quadMeshFile, outputPath):
+    """
+    Takes a triangle mesh and a quadrilateral mesh, uses the SurfaceMesh library to make objects, 
+    finds the closest triangle face for each quadrilateral vertex,
+    returns a txt file containing the barycentric coordinates of each quad mesh vertex with respect to the closest triangle face.
+    triMeshFile: str - Path to the triangle mesh file (OBJ format).
+    quadMeshFile: str - Path to the quadrilateral mesh file (OBJ format).
+    outputPath: str - Path to the output text file where results will be saved.
+    """
     # create a mesh of both files.
     triMesh = SurfaceMesh.FromOBJ_FileName(triMeshFile)
     quadMesh = SurfaceMesh.FromOBJ_FileName(quadMeshFile)
