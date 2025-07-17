@@ -77,6 +77,11 @@ def convertToBarycentric(p, a, b, c):
     '''
     Compute barycentric coordinates (u, v, w) for
     point p with respect to triangle (a, b, c)
+    Args:
+        p (np.array): The point to convert (x, y, z).
+        a, b, c (np.array): The vertices of the triangle (x, y, z).
+    Returns:
+        np.array: Barycentric coordinates (u, v, w) of point p with respect to triangle (a, b, c).
     '''
 
     v0 = b - a
