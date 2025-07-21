@@ -117,6 +117,24 @@ def save_to_obj(file_path, vertices, faces):
             obj_file.write(f"f {face_str}\n")
         #obj_file.write("f 7 9 11 0\n")
 
+def calcClosestVertice(triMesh, chosenVertex):
+    """
+    Finds the vertex on the triangular mesh with the smallest distance to the chosen vertex from the quad mesh.
+    triMesh: SurfaceMesh - The triangle mesh object.
+    chosenVertex: np.array - The vertex from the quadrilateral mesh to find the closest triangle vertex to.
+    """
+    minDistance = linalg.norm(chosenVertex - triMesh.vs[0])
+    index = 0
+    vertexIndex = 0
+    for vertex in triMesh.vs:
+            #calculate the distance between the chosen vertex and the current vertex
+        distance = linalg.norm(chosenVertex - vertex)
+            #track the vertex with min distance
+        if distance < minDistance:
+            minDistance = distance
+            vertexIndex = index
+        index += 1
+    return vertexIndex
 
 def connectQuadVertexOntoTriangle(triMeshFile, quadMeshFile, outputPath):
     """
@@ -139,18 +157,7 @@ def connectQuadVertexOntoTriangle(triMeshFile, quadMeshFile, outputPath):
     numQuadVertices = len(quadMesh.vs)
     for i in range(numQuadVertices):
         chosenVertex = quadMesh.vs[i]
-        #find the closest triangle vertice
-        minDistance = linalg.norm(chosenVertex - triMesh.vs[0])
-        index = 0
-        vertexIndex = 0
-        for vertex in triMesh.vs:
-            #calculate the distance between the chosen vertex and the current vertex
-            distance = linalg.norm(chosenVertex - vertex)
-            #track the vertex with min distance
-            if distance < minDistance:
-                minDistance = distance
-                vertexIndex = index
-            index += 1
+        vertexIndex = calcClosestVertice(triMesh, chosenVertex)
 
         #find and store each triangle face connected to the closest vertice
         #use the half edge data structure to find all faces connected to the closest triangle vertice.
