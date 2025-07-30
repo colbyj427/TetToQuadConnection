@@ -137,6 +137,12 @@ def calcClosestVertice(triMesh, chosenVertex):
     return vertexIndex
 
 def findResidingFace(triMesh, chosenVertex, vertexIndicesOfAdjacentFaces):
+    """
+    Finds the face on the triangle mesh object which the chosen vertex resides in, if any.
+    triMesh: SurfaceMesh - The triangle mesh object.
+    chosenVertex: np.array - The vertex from the quadrilateral mesh to check against the triangle faces.
+    vertexIndicesOfAdjacentFaces: 2D list - A list of lists containing the indices of vertices for each face adjacent to the closest triangle vertex of the chosen vertex.
+    """
     badCoord = True
     closestFaceIndex = -1
     for face in vertexIndicesOfAdjacentFaces:
@@ -157,6 +163,12 @@ def findResidingFace(triMesh, chosenVertex, vertexIndicesOfAdjacentFaces):
     return badCoord, projectedPoint, barycentric
 
 def findClosestFace(triMesh, facesAdjacentToVertex, projectedPoint):
+    """
+    Finds the closest face on the triangle mesh to the projected point.
+    triMesh: SurfaceMesh - The triangle mesh object.
+    facesAdjacentToVertex: list - A list of indices of faces adjacent to the closest triangle vertex of the chosen vertex.
+    projectedPoint: np.array - The point projected onto the triangle plane.
+    """
     faceIndex = 0
     minDistance = math.inf
     for face in facesAdjacentToVertex:
@@ -176,7 +188,7 @@ def findClosestFace(triMesh, facesAdjacentToVertex, projectedPoint):
                 closestProjectedPointOnEdge = projectedPointOnEdge
             edgeIndex += 1
         faceIndex += 1
-    return closestProjectedPointOnEdge,closestFaceIndex
+    return closestProjectedPointOnEdge, closestFaceIndex
 
 def connectQuadVertexOntoTriangle(triMeshFile, quadMeshFile, outputPath):
     """
