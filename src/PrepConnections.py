@@ -7,6 +7,11 @@ from ConnectQuadToTet import save_to_obj
 from surfacemesh import SurfaceMesh
 
 def vtkToObj(vtkMesh, filename = "../input/convertedVTK.obj"):
+    """
+    Converts a VTK mesh file to an OBJ file format.
+    vtkMesh: str - Path to the VTK mesh file.
+    filename: str - Path where the converted OBJ file will be saved.
+    """
     # get the vertices and faces from the vtk mesh.
     # obj is 1 indexed. vtk is 0 indexed.
     with open(vtkMesh, "r") as quadFile: 
@@ -37,7 +42,20 @@ def vtkToObj(vtkMesh, filename = "../input/convertedVTK.obj"):
     return None
 
 def convert_boundary_txt_to_obj(obj_input_path, txt_path, obj_output_path, boundary = "Zero"):
+    """
+    Converts a txt file of vertex indices from an obj to a new obj file containing only the vertices and faces that are part of the specified boundary.
+    obj_input_path: str - Path to the input OBJ file.
+    txt_path: str - Path to the text file containing vertex indices.
+    obj_output_path: str - Path where the output OBJ file will be saved.
+    boundary: str - Specifies which boundary to filter by. Options are "Zero", "One", or "Both", default is "Zero".
+    """
     def extract_indices(lines, label):
+        """
+        Extracts indices from lines of text based on a label.
+        Splits lines by comma, grabbing every index on every line after the label until the next section header.
+        lines: List[str] - Lines of text to search through.
+        label: str - The label to look for in the lines.
+        """
         collecting = False
         indices = []
         for line in lines:
@@ -101,13 +119,3 @@ def convert_boundary_txt_to_obj(obj_input_path, txt_path, obj_output_path, bound
             f.write(face + '\n')
 
     print(f"Filtered OBJ written to: {obj_output_path}")
-
-# convert_boundary_txt_to_obj("../input/hook_bdry.obj", "../input/hook_boundary_conditions.txt", "../output/boundaryFile.obj")
-
-# if "name" == "main":
-#     print("Starting main.py...")
-
-#     vtkMesh = sys.argv[1]
-#     outFile = sys.argv[2]
-#     vtkToObj(vtkMesh,outFile)
-# vtkToObj("quad.vtk", "convertedVTK.obj")

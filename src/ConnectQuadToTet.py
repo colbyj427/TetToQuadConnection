@@ -74,11 +74,15 @@ def project_point_onto_triangle_edge(point, v0, v1):
 
 
 def convertToBarycentric(p, a, b, c):
-    '''
+    """
     Compute barycentric coordinates (u, v, w) for
     point p with respect to triangle (a, b, c)
-    '''
-
+    Args:
+        p (np.array): The point to convert (x, y, z).
+        a, b, c (np.array): The vertices of the triangle (x, y, z).
+    Returns:
+        np.array: Barycentric coordinates (u, v, w) of point p with respect to triangle (a, b, c).
+    """
     v0 = b - a
     v1 = c - a
     v2 = p - a 
@@ -113,161 +117,123 @@ def save_to_obj(file_path, vertices, faces):
             obj_file.write(f"f {face_str}\n")
         #obj_file.write("f 7 9 11 0\n")
 
+def calcClosestVertice(triMesh, chosenVertex):
+    """
+    Finds the vertex on the triangular mesh with the smallest distance to the chosen vertex from the quad mesh.
+    triMesh: SurfaceMesh - The triangle mesh object.
+    chosenVertex: np.array - The vertex from the quadrilateral mesh to find the closest triangle vertex to.
+    """
+    minDistance = linalg.norm(chosenVertex - triMesh.vs[0])
+    index = 0
+    vertexIndex = 0
+    for vertex in triMesh.vs:
+            #calculate the distance between the chosen vertex and the current vertex
+        distance = linalg.norm(chosenVertex - vertex)
+            #track the vertex with min distance
+        if distance < minDistance:
+            minDistance = distance
+            vertexIndex = index
+        index += 1
+    return vertexIndex
+
+def findResidingFace(triMesh, chosenVertex, vertexIndicesOfAdjacentFaces):
+    """
+    Finds the face on the triangle mesh object which the chosen vertex resides in, if any.
+    triMesh: SurfaceMesh - The triangle mesh object.
+    chosenVertex: np.array - The vertex from the quadrilateral mesh to check against the triangle faces.
+    vertexIndicesOfAdjacentFaces: 2D list - A list of lists containing the indices of vertices for each face adjacent to the closest triangle vertex of the chosen vertex.
+    """
+    badCoord = True
+    closestFaceIndex = -1
+    for face in vertexIndicesOfAdjacentFaces:
+        closestFaceIndex += 1
+        chosenTriFaceVertices = []
+        for vert in face:
+            chosenTriFaceVertices.append(triMesh.vs[vert])
+
+        #Project to closest point on plane of a triangle.
+        #project the quad point onto the triangle
+        projectedPoint = project_point_onto_triangle_plane(chosenVertex, chosenTriFaceVertices[0], chosenTriFaceVertices[1], chosenTriFaceVertices[2])
+
+        #use barycentric coordinates to express it.
+        barycentric = convertToBarycentric(projectedPoint, chosenTriFaceVertices[0], chosenTriFaceVertices[1], chosenTriFaceVertices[2])
+        if barycentric[0] >= 0 and barycentric[0] <= 1 and barycentric[1] >= 0 and barycentric[1] <= 1 and barycentric[2] >= 0 and barycentric[2] <= 1:
+            badCoord = False
+            break
+    return badCoord, projectedPoint, barycentric
+
+def findClosestFace(triMesh, facesAdjacentToVertex, projectedPoint):
+    """
+    Finds the closest face on the triangle mesh to the projected point.
+    triMesh: SurfaceMesh - The triangle mesh object.
+    facesAdjacentToVertex: list - A list of indices of faces adjacent to the closest triangle vertex of the chosen vertex.
+    projectedPoint: np.array - The point projected onto the triangle plane.
+    """
+    faceIndex = 0
+    minDistance = math.inf
+    for face in facesAdjacentToVertex:
+                # get the halfedges of the face.
+                # use to_vertex and opposite_edge -> to_vertex to get the vertices of the edges.
+                # Do it for all edges until at the first. 
+                # Keep the smallest distance then move to next face.
+        edges = triMesh.get_face_halfedges(face)
+        edgeIndex = 0
+        for edge in edges:
+            v0 = triMesh.vs[edge.ToVertex()]
+            v1 = triMesh.vs[triMesh.halfedges[edge.next_he].ToVertex()]
+            projectedPointOnEdge , distance = project_point_onto_triangle_edge(projectedPoint, v0, v1)
+            if distance < minDistance:
+                minDistance = distance
+                closestFaceIndex = faceIndex
+                closestProjectedPointOnEdge = projectedPointOnEdge
+            edgeIndex += 1
+        faceIndex += 1
+    return closestProjectedPointOnEdge, closestFaceIndex
 
 def connectQuadVertexOntoTriangle(triMeshFile, quadMeshFile, outputPath):
+    """
+    Takes a triangle mesh and a quadrilateral mesh, uses the SurfaceMesh library to make half-edge data structures for both, 
+    finds the closest triangle face for each quadrilateral vertex,
+    returns a txt file containing the barycentric coordinates of each quad mesh vertex with respect to the closest triangle face.
+    triMeshFile: str - Path to the triangle mesh file (OBJ format).
+    quadMeshFile: str - Path to the quadrilateral mesh file (OBJ format).
+    outputPath: str - Path to the output text file where results will be saved.
+    """
     # create a mesh of both files.
     triMesh = SurfaceMesh.FromOBJ_FileName(triMeshFile)
     quadMesh = SurfaceMesh.FromOBJ_FileName(quadMeshFile)
 
     quadFile = open(outputPath, "w")
-    # first format
-    # quadFile.write("Quadrilateral Vertex: [ x y z ] , Closest Triangle Face Vertices: [ x y z ]\n")
-    # second format
     quadFile.write("Quadrilateral Vertex Index, Triangle Face Index, Barycentric Coordinates (u v w)\n")
 
     #determine how many quad verices there are.
     # for loop that many times 
     numQuadVertices = len(quadMesh.vs)
     for i in range(numQuadVertices):
-
-        #choose a vertex from the quad mesh
         chosenVertex = quadMesh.vs[i]
-
-        #find the closest triangle vertice
-        # loop through all vertices in the triangle mesh
-        minDistance = linalg.norm(chosenVertex - triMesh.vs[0])
-        closestVertex = triMesh.vs[0]
-        index = 0
-        vertexIndex = 0
-        for vertex in triMesh.vs:
-            #calculate the distance between the chosen vertex and the current vertex
-            distance = linalg.norm(chosenVertex - vertex)
-            #track the vertex with min distance
-            if distance < minDistance:
-                minDistance = distance
-                closestVertex = vertex
-                vertexIndex = index
-            index += 1
-
-        #find and store each triangle face connected to the closest vertice
-        #use the half edge data structure to find all faces connected to the closest triangle vertice.
+        vertexIndex = calcClosestVertice(triMesh, chosenVertex)
         facesAdjacentToVertex = triMesh.GetFacesAdjacentToVertex(vertexIndex) # these are the indices of the faces adjacent to the closest triangle vertex.
 
-        #using trimesh:
-
-        #use a for loop to go through each adjacent face until one has barycentric coordiantes all between 0 and 1.
-        vertexIndicesOfAdjacentFaces = [] # this will store the vertex indices of the faces adjacent to the closest triangle vertex.
+        vertexIndicesOfAdjacentFaces = []
         for face in facesAdjacentToVertex:
-            vertexIndicesOfAdjacentFaces.append(triMesh.faces[face])
+            vertexIndicesOfAdjacentFaces.append(triMesh.faces[face]) # 2D array
 
-        # faceMeshIndices = triMesh.faces[facesAdjacentToVertex]
-        badCoord = True
-        closestFaceIndex = -1
-        for face in vertexIndicesOfAdjacentFaces:
-            closestFaceIndex += 1
-            chosenTriFaceVertices = []
-            for vert in face:
-                chosenTriFaceVertices.append(triMesh.vs[vert])
-
-            #Project to closest point on plane of a triangle.
-            #project the quad point onto the triangle
-            projectedPoint = project_point_onto_triangle_plane(chosenVertex, chosenTriFaceVertices[0], chosenTriFaceVertices[1], chosenTriFaceVertices[2])
-
-            #use barycentric coordinates to express it.
-            barycentric = convertToBarycentric(projectedPoint, chosenTriFaceVertices[0], chosenTriFaceVertices[1], chosenTriFaceVertices[2])
-            if barycentric[0] >= 0 and barycentric[0] <= 1 and barycentric[1] >= 0 and barycentric[1] <= 1 and barycentric[2] >= 0 and barycentric[2] <= 1:
-                badCoord = False
-                break
-
+        # If the point resides in a face when projected onto the face's plane, find out the barycentric coordinates 
+        badCoord, projectedPoint, barycentric = findResidingFace(triMesh, chosenVertex, vertexIndicesOfAdjacentFaces)
         #if none of them had barycentric coordinates all between 0 and 1, find the closest face and use its barycentric coordinates.
-        closestProjectedPointOnEdge = "unassigned"
         if badCoord:
-            # print("No face with barycentric coordinates all between 0 and 1")
-            # print("No face with barycentric coordinates all between 0 and 1")
-            # Unless there is a way to determine which edges are on the outside, closest to our point, then
-            # we need to check all the edges on each adjacent face and use the one with the smallest distance.
-            # print(f"Faces adjacent to vertex: {facesAdjacentToVertex}")
-            # print(f"Faces adjacent to vertex: {facesAdjacentToVertex}")
-            faceIndex = 0
-            minDistance = math.inf
-            for face in facesAdjacentToVertex:
-                # get the halfedges of the face.
-                # use to_vertex and opposite_edge -> to_vertex to get the vertices of the edges.
-                # Do it for all edges until at the first. 
-                # Keep the smallest distance then move to next face.
-                edges = triMesh.get_face_halfedges(face)
-                edgeIndex = 0
-                for edge in edges:
-                    v0 = triMesh.vs[edge.ToVertex()]
-                    v1 = triMesh.vs[triMesh.halfedges[edge.next_he].ToVertex()]
-                    #v1 = triMesh.vs[edge.next_he.ToVertex()]
-                    projectedPointOnEdge , distance = project_point_onto_triangle_edge(projectedPoint, v0, v1)
-                    if distance < minDistance:
-                        minDistance = distance
-                        closestFaceIndex = faceIndex
-                        closestEdgeIndex = edgeIndex
-                        closestProjectedPointOnEdge = projectedPointOnEdge
-                    edgeIndex += 1
-                faceIndex += 1
-
-            #add the vertices in the closest face to a list, then use them to get the barycentric coordinates after
-            #finding the closest face and projecting the point onto the edge.
+            closestProjectedPointOnEdge, closestFaceIndex = findClosestFace(triMesh, facesAdjacentToVertex, projectedPoint)
             chosenTriFaceVertices = []
             for vert in triMesh.faces[closestFaceIndex]:
                 chosenTriFaceVertices.append(triMesh.vs[vert])
             barycentric = convertToBarycentric(closestProjectedPointOnEdge, chosenTriFaceVertices[0], chosenTriFaceVertices[1], chosenTriFaceVertices[2])
-
-            ########################
-
         
-        #otherwise, keep moving
-
         #Store the triangle and barycentric coordinates.
         closestFaceMeshIndex = facesAdjacentToVertex[closestFaceIndex]
         #chosenTriFaceVertices - the triangle face vertices list
         #barycentric - the barycentric coordinates of the projected point
 
-        #Output: map from given quadrilateral vertex to triangle barycentric coordinates and triangle index.
-        # Form: 
-        # 1. Quad Mesh Chosen Vertex values
-        # 2. The coordinates of the point after projection onto triangle.
-        # 3. Barycentric Coordinates of Projection
-        # 4. Closest Triangle Face Index
-        # 5. Closest Vertex values on Triangle.
-
-        # print("Quad Mesh Chosen Vertex: " + str(chosenVertex))
-        # print("Projected Point on Triangle: " + str(closestProjectedPointOnEdge))
-        # print("Barycentric Coordinates of Projection: " + str(barycentric))
-        # print("Triangle Face Index: " + str(closestFaceMeshIndex))
-        # print("Closest Vertex on Triangle: " + str(closestVertex))
-
-        import numpy
-
-        # this appends the vertex to the tri mesh.
-        # ***** not what I need right now
-        #The value will be "unasigned" if 
-        #the closest projected point on edge was not assigned, 
-        # if it has changed, we can move forward using the point it changed to.
-
-
-        # if isinstance(closestProjectedPointOnEdge, str):
-        #     chosenVertex = [chosenVertex]
-        #     triMesh.vs = numpy.append(triMesh.vs, chosenVertex, axis=0)
-        # else:
-        #     #This branch is not tested.
-        #     closestProjectedPointOnEdge = [closestProjectedPointOnEdge]
-        #     triMesh.vs = numpy.append(triMesh.vs, closestProjectedPointOnEdge, axis=0)
-        # save_to_obj(outputFile, triMesh.vs, triMesh.faces)
-
-
-        #***********
-
         #write the vertice each iteration of the for loop.
-        # Format: "the current vertex from the quadrialteral mesh, the vertices of the closest face on the triangle mesh."
-        # quadFile.write(f"{chosenVertex} , [ {triMesh.vs[triMesh.faces[closestFaceMeshIndex][0]][0]} {triMesh.vs[triMesh.faces[closestFaceMeshIndex][0]][1]} {triMesh.vs[triMesh.faces[closestFaceMeshIndex][0]][2]} ] [ {triMesh.vs[triMesh.faces[closestFaceMeshIndex][1]][0]} {triMesh.vs[triMesh.faces[closestFaceMeshIndex][1]][1]} {triMesh.vs[triMesh.faces[closestFaceMeshIndex][1]][2]} ] [ {triMesh.vs[triMesh.faces[closestFaceMeshIndex][2]][0]} {triMesh.vs[triMesh.faces[closestFaceMeshIndex][2]][1]} {triMesh.vs[triMesh.faces[closestFaceMeshIndex][2]][2]} ]\n")
         # Format: "the current vertex indice from the quadrilateral mesh, the face indice it resides in or is closest to, the barycentric coordinates of the vertice in that face."
         quadFile.write(f"{i}, {closestFaceMeshIndex}, {barycentric[0]} {barycentric[1]} {barycentric[2]}\n")
-
     quadFile.close()
-
-#connectQuadVertexOntoTriangle("objects/tri_mesh.obj", "objects/tri_mesh1000.obj", "output/SeparateFileTestOutput1.obj")
